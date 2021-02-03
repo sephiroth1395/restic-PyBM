@@ -13,6 +13,8 @@ import subprocess
 import errno
 import yaml
 import os
+import json
+from datetime import datetime,timedelta
 from argparse import ArgumentParser
 
 # ---- constants --------------------------------------------------------------
@@ -38,6 +40,9 @@ def create_args():
 
   parser.add_argument("--full", action = 'store_true',
     help = 'check action:  Verifies the actual snapshots content on top of repository metadata.')
+
+  parser.add_argument("--age", action = 'store_true',
+    help = 'check action:  Verify the age of the snapshots.')
 
   parser.add_argument("--perfdata", action = "store_true",
     help = 'check action: Outputs Nagios-compliant perfdata metrics')
@@ -135,11 +140,49 @@ elif args.action == 'check':
     if not args.quiet: print("restic output: %s" % result.stderr)
     exit(2)
   else:
-    if not args.quiet: print("OK - Repository %s is healthy" % args.repo)
-    if args.verbose:
-      print("------------------------------------------------------------------------------")
-      print(result.stdout)
-    exit(0)
+    # If requested, check the snapshots age
+    if args.age:
+      command = resticLocation + ' snapshots --json --group-by host --repo ' + repos[args.repo]['location']
+      result2 = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
+      if not result2.returncode == 0:
+        print("CRITICAL - Error getting snapshots for repository %s" % args.repo)
+        if not args.quiet: print("restic output: %s" % result2.stderr)
+        exit(2)
+      else:
+        snaps = json.loads(result2.stdout)
+	# Oldest snapshot is the first one
+        oldestTime = snaps[0]['snapshots'][0]['time']
+        # Newest snapshot is the last one
+        newestTime = snaps[0]['snapshots'][len(snaps[0]['snapshots'])-1]['time']
+	# Convert to Pythonic time structures
+        timeFormat = '%Y-%m-%dT%H:%M:%S'
+        oldestTime = datetime.strptime(oldestTime[:-16], timeFormat)
+        newestTime = datetime.strptime(newestTime[:-16], timeFormat)
+        # Compute snapshots ages versus the current time
+        currentTime = datetime.now()
+        oldDiff = currentTime - oldestTime
+        newDiff = currentTime - newestTime
+        # Check ages versus config
+        if oldDiff > timedelta(days=repos[args.repo]['max_age']):
+          print("WARNING - Oldest snapshot on %s is %s old" % (args.repo, oldDiff))
+          exit(1)
+        if newDiff > timedelta(days=repos[args.repo]['min_age']):
+          print("WARNING - Newest snapshot on %s is %s old" % (args.repo, newDiff))
+          exit(1)
+        else:
+          if not args.quiet: print("OK - Repository %s is healthy" % args.repo)
+          if args.verbose:
+            print("------------------------------------------------------------------------------")
+            print(result.stdout)
+            print("Newest snapshot age: %s" % newDiff)
+            print("Oldest snapshot age: %s" % oldDiff)
+          exit(0)
+    else:
+      if not args.quiet: print("OK - Repository %s is healthy" % args.repo)
+      if args.verbose:
+        print("------------------------------------------------------------------------------")
+        print(result.stdout)
+      exit(0)
 
 elif args.action == 'list':
   # List snapshots in the repo
@@ -147,7 +190,7 @@ elif args.action == 'list':
   result = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
   # Check the restic return code
   if not result.returncode == 0:
-    print("CRITICAL - Error creating new snapshot on repository %s" % repos[args.repo]['location'])
+    print("CRITICAL - Error listing snapshots on repository %s" % repos[args.repo]['location'])
     print("restic output: %s" % result.stderr)
     exit(2)
   else:

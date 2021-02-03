@@ -34,7 +34,9 @@ So I decided to rewrite things in a _somewhat_ cleaner manner in Python, with a 
 * Batch execution of a command on all repos
 * Repositories deduplication
 * Integration with `HashiCorp Vault`
-* Option to auto-update `restic` upon invocation.
+* Option to auto-update `restic` upon invocation
+* Repository passwords management (add and delete)
+* Support for optional `excludes`.
 
 ## Usage
 
@@ -63,6 +65,12 @@ repos:
 ```
 
 * `restic_binary_location` points to the location of the actual `restic` binary.  The script __does not__ handle the deployment of `restic` itself.
+* Inside the `repos` object, each repository is identified by a `label` and contains four fields:
+  * `location`: A `restic`-compliant repository address
+  * `key`: A password for this repo.
+  * `min-age`: The minimal age of the newest snapshot in the repository.  Used for `check`.
+  * `max-age`: The maximum age of the oldest snapshot in the repository.  Used for `check` and `prune`.
+  * `includes`: A list of folder and/or files to backup in the snapshots.
 
 ### Application
 

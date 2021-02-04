@@ -177,6 +177,7 @@ elif args.action == 'check':
   if args.full: command = command + ' --read-data'
   result = run_command(command, commandEnv)
   # Check the restic return code
+  errorMessage = ''
   if not result.returncode == 0:
     errorMessage = ("Error checking repository %s" % args.repo)
   else:

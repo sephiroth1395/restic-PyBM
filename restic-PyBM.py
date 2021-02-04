@@ -91,19 +91,31 @@ def run_command(command, commandEnv):
 
 
 # ---- generate the output and ensure the repo is unlocked --------------------
-def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, commandEnv, repoLocation):
+def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, commandEnv, repoLocation, quiet, verbose):
   # Ensure the repository is unlocked
   command = resticLocation + ' unlock --repo ' + repoLocation
-  result = run_command(command, commandEnv)
+  resultUnlock = run_command(command, commandEnv)
 
   # Process the output
   if not returnCode == 0:
     print("CRITICAL - %s" % errorMsg)
     print("restic output: %s" % stdErr)
+    print("unlock output:")
+    print(resultUnlock.stdout)
+    print(resultUnlock.stderr)
     exit(2)
   else:
-    if not args.quiet:  print("OK - %s" % successMsg)
-    exit(0)
+    if not resultUnlock.returncode == 0:
+      if not quiet:  print("WARNING - Could not unlock %s" % repoLocation)
+      if verbose: print("restic output: %s" % stdOut)
+      print("unlock output:")
+      print(resultUnlock.stdout)
+      print(resultUnlock.stderr)      
+      exit(1)
+    else:
+      if not quiet:  print("OK - %s" % successMsg)
+      if verbose: print("restic output: %s" % stdOut)
+      exit(0)
 
 
 # ---- mainline ---------------------------------------------------------------
@@ -135,7 +147,9 @@ if args.action == 'create':
     ("Repository %s successfully created at location %s" % (args.repo, repos[args.repo]['location'])),
     ("Error creating repository %s" % repos[args.repo]['location']),
     commandEnv,
-    repos[args.repo]['location']
+    repos[args.repo]['location'],
+    args.quiet,
+    args.verbose
   )
 #  if not result.returncode == 0:
 #    print("CRITICAL - Error creating repository %s" % repos[args.repo]['location'])

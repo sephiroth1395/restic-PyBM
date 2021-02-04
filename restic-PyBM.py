@@ -4,7 +4,8 @@
 # Written by Eric Viseur <eric.viseur@gmail.com>, 2021
 # Released under MIT license
 
-# v0.1 - Initial release
+# v0.1 - 04/02/21 - Initial release
+# v0.2 - 
 
 # ---- imports ----------------------------------------------------------------
 
@@ -19,7 +20,7 @@ from argparse import ArgumentParser
 
 # ---- constants --------------------------------------------------------------
 
-APPDESC = 'A restic wrapper and Nagios-compliant status checker using a YAML configuration file.  Version 0.1.'
+APPDESC = 'A restic wrapper and Nagios-compliant status checker using a YAML configuration file.  Version 0.2.'
 CONFIG_FILE = 'backup.yml'
 
 # ---- create the command line options -----------------------------------------
@@ -83,6 +84,28 @@ def parse_config(configFile):
     exit(2)
 
 
+# ---- run a command and return its output
+def run_command(command, commandEnv):
+  result = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
+  return result
+
+
+# ---- generate the output and ensure the repo is unlocked --------------------
+def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, commandEnv, repoLocation):
+  # Ensure the repository is unlocked
+  command = resticLocation + ' unlock --repo ' + repoLocation
+  result = run_command(command, commandEnv)
+
+  # Process the output
+  if not returnCode == 0:
+    print("CRITICAL - %s" % errorMsg)
+    print("restic output: %s" % stdErr)
+    exit(2)
+  else:
+    if not args.quiet:  print("OK - %s" % successMsg)
+    exit(0)
+
+
 # ---- mainline ---------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
@@ -103,15 +126,24 @@ commandEnv["RESTIC_PASSWORD"] = repos[args.repo]['key']
 if args.action == 'create':
   # Create a new restic repo with the infos provided in backup.yml
   command = resticLocation + ' init --repo ' + repos[args.repo]['location']
-  result = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
-  # Check the restic return code
-  if not result.returncode == 0:
-    print("CRITICAL - Error creating repository %s" % repos[args.repo]['location'])
-    print("restic output: %s" % result.stderr)
-    exit(2)
-  else:
-    if not args.quiet:  print("OK - Repository %s successfully created at location %s" % (args.repo, repos[args.repo]['location']))
-    exit(0)
+  result = run_command(command, commandEnv)
+  # Return the results
+  end_script(
+    result.returncode,
+    result.stdout,
+    result.stderr,
+    ("Repository %s successfully created at location %s" % (args.repo, repos[args.repo]['location'])),
+    ("Error creating repository %s" % repos[args.repo]['location']),
+    commandEnv,
+    repos[args.repo]['location']
+  )
+#  if not result.returncode == 0:
+#    print("CRITICAL - Error creating repository %s" % repos[args.repo]['location'])
+#    print("restic output: %s" % result.stderr)
+#    exit(2)
+#  else:
+#    if not args.quiet:  print("OK - Repository %s successfully created at location %s" % (args.repo, repos[args.repo]['location']))
+#    exit(0)
 
 if args.action == 'prune':
   # Clean up repo according to provided preservation policy

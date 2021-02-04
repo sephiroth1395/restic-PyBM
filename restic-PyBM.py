@@ -187,7 +187,7 @@ elif args.action == 'check':
       if not result2.returncode == 0:
         errorMessage = ("Error getting snapshots for repository %s" % args.repo)
         result.stderr = result.stderr + "\n" + result2.stderr
-        return.returncode = 2
+        result.returncode = 2
       else:
         snaps = json.loads(result2.stdout)
 	      # Oldest snapshot is the first one

@@ -114,7 +114,9 @@ def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, commandEnv, rep
       exit(1)
     else:
       if not quiet:  print("OK - %s" % successMsg)
-      if verbose: print("restic output: %s" % stdOut)
+      if verbose:
+        print("------------------------------------------------------------------------------")
+        print(stdOut)
       exit(0)
 
 
@@ -151,35 +153,29 @@ if args.action == 'create':
     args.quiet,
     args.verbose
   )
-#  if not result.returncode == 0:
-#    print("CRITICAL - Error creating repository %s" % repos[args.repo]['location'])
-#    print("restic output: %s" % result.stderr)
-#    exit(2)
-#  else:
-#    if not args.quiet:  print("OK - Repository %s successfully created at location %s" % (args.repo, repos[args.repo]['location']))
-#    exit(0)
 
 if args.action == 'prune':
   # Clean up repo according to provided preservation policy
   command = resticLocation + ' forget --group-by host --keep-within ' + repos[args.repo]['max_age'] + ' --prune --repo ' + repos[args.repo]['location']
-  result = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
-  # Check the restic return code
-  if not result.returncode == 0:
-    print("CRITICAL - Error cleaning up repository %s" % args.repo)
-    print("restic output: %s" % result.stderr)
-    exit(2)
-  else:
-    if not args.quiet: print("OK - Repository %s clean up successful" % args.repo)
-    if args.verbose:
-      print("------------------------------------------------------------------------------")
-      print(result.stdout)
-    exit(0)
+  result = run_command(command, commandEnv)
+  # Return the results
+  end_script(
+    result.returncode,
+    result.stdout,
+    result.stderr,
+    ("Repository %s clean up successful" % args.repo),
+    ("Error cleaning up repository %s" % args.repo),
+    commandEnv,
+    repos[args.repo]['location'],
+    args.quiet,
+    args.verbose
+  )
 
 elif args.action == 'check':
   # Check the repository integrity
   command = resticLocation + ' check --repo ' + repos[args.repo]['location']
   if args.full: command = command + ' --read-data'
-  result = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
+  result = run_command(command, commandEnv)
   # Check the restic return code
   if not result.returncode == 0:
     print("CRITICAL - Error checking repository %s" % args.repo)
@@ -189,18 +185,18 @@ elif args.action == 'check':
     # If requested, check the snapshots age
     if args.age:
       command = resticLocation + ' snapshots --json --group-by host --repo ' + repos[args.repo]['location']
-      result2 = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
+      result2 = run_command(command, commandEnv)
       if not result2.returncode == 0:
         print("CRITICAL - Error getting snapshots for repository %s" % args.repo)
         if not args.quiet: print("restic output: %s" % result2.stderr)
         exit(2)
       else:
         snaps = json.loads(result2.stdout)
-	# Oldest snapshot is the first one
+	      # Oldest snapshot is the first one
         oldestTime = snaps[0]['snapshots'][0]['time']
         # Newest snapshot is the last one
         newestTime = snaps[0]['snapshots'][len(snaps[0]['snapshots'])-1]['time']
-	# Convert to Pythonic time structures
+	      # Convert to Pythonic time structures
         timeFormat = '%Y-%m-%dT%H:%M:%S'
         oldestTime = datetime.strptime(oldestTime[:-16], timeFormat)
         newestTime = datetime.strptime(newestTime[:-16], timeFormat)
@@ -233,18 +229,19 @@ elif args.action == 'check':
 elif args.action == 'list':
   # List snapshots in the repo
   command = resticLocation + ' snapshots --group-by host --repo ' + repos[args.repo]['location']
-  result = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
-  # Check the restic return code
-  if not result.returncode == 0:
-    print("CRITICAL - Error listing snapshots on repository %s" % repos[args.repo]['location'])
-    print("restic output: %s" % result.stderr)
-    exit(2)
-  else:
-    if not args.quiet:
-      print("OK - Snapshot list retreived for repository %s" % args.repo)
-      print("------------------------------------------------------------------------------")
-      print(result.stdout)
-    exit(0)
+  result = run_command(command, commandEnv)
+  # Return the results
+  end_script(
+    result.returncode,
+    result.stdout,
+    result.stderr,
+    ("Snapshot list retreived for repository %s" % args.repo),
+    ("Error listing snapshots on repository %s" % repos[args.repo]['location']),
+    commandEnv,
+    repos[args.repo]['location'],
+    args.quiet,
+    args.verbose
+  )
 
 else:
   # Create a new snapshot
@@ -252,11 +249,15 @@ else:
   for folder in repos[args.repo]['includes']:
     command = command + ' ' + folder
   result = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)
-  # Check the restic return code
-  if not result.returncode == 0:
-    print("CRITICAL - Error creating new snapshot on repository %s" % repos[args.repo]['location'])
-    print("restic output: %s" % result.stderr)
-    exit(2)
-  else:
-    if not args.quiet: print("OK - Snapshot successfully created on repository %s" % args.repo)
-    exit(0)
+  # Return the results
+  end_script(
+    result.returncode,
+    result.stdout,
+    result.stderr,
+    ("Snapshot successfully created on repository %s" % args.repo),
+    ("Error creating new snapshot on repository %s" % repos[args.repo]['location']),
+    commandEnv,
+    repos[args.repo]['location'],
+    args.quiet,
+    args.verbose
+  )

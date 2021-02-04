@@ -202,7 +202,7 @@ elif args.action == 'list':
 
 else:
   # Create a new snapshot
-  command = resticLocation + ' backup --repo ' + repos[args.repo]['location']
+  command = resticLocation + ' backup --exclude \'lost+found\' --repo ' + repos[args.repo]['location']
   for folder in repos[args.repo]['includes']:
     command = command + ' ' + folder
   result = subprocess.run(command, env=commandEnv, shell=True, text=True, capture_output=True)

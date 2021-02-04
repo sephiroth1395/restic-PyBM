@@ -163,10 +163,10 @@ elif args.action == 'check':
         oldDiff = currentTime - oldestTime
         newDiff = currentTime - newestTime
         # Check ages versus config
-        if oldDiff > timedelta(days=repos[args.repo]['max_age']):
+        if oldDiff > timedelta(days=int(repos[args.repo]['max_age'])):
           print("WARNING - Oldest snapshot on %s is %s old" % (args.repo, oldDiff))
           exit(1)
-        if newDiff > timedelta(days=repos[args.repo]['min_age']):
+        if newDiff > timedelta(days=int(repos[args.repo]['min_age'])):
           print("WARNING - Newest snapshot on %s is %s old" % (args.repo, newDiff))
           exit(1)
         else:

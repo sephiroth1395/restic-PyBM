@@ -215,7 +215,7 @@ elif args.action == 'check':
     result.stdout,
     result.stderr,
     ("Repository %s is healthy" % args.repo),
-    errorMessage),
+    errorMessage,
     commandEnv,
     repos[args.repo]['location'],
     args.quiet,

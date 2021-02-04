@@ -178,18 +178,16 @@ elif args.action == 'check':
   result = run_command(command, commandEnv)
   # Check the restic return code
   if not result.returncode == 0:
-    print("CRITICAL - Error checking repository %s" % args.repo)
-    if not args.quiet: print("restic output: %s" % result.stderr)
-    exit(2)
+    errorMessage = ("Error checking repository %s" % args.repo)
   else:
     # If requested, check the snapshots age
     if args.age:
       command = resticLocation + ' snapshots --json --group-by host --repo ' + repos[args.repo]['location']
       result2 = run_command(command, commandEnv)
       if not result2.returncode == 0:
-        print("CRITICAL - Error getting snapshots for repository %s" % args.repo)
-        if not args.quiet: print("restic output: %s" % result2.stderr)
-        exit(2)
+        errorMessage = ("Error getting snapshots for repository %s" % args.repo)
+        result.stderr = result.stderr + "\n" + result2.stderr
+        return.returncode = 2
       else:
         snaps = json.loads(result2.stdout)
 	      # Oldest snapshot is the first one
@@ -206,25 +204,23 @@ elif args.action == 'check':
         newDiff = currentTime - newestTime
         # Check ages versus config
         if oldDiff > timedelta(days=int(repos[args.repo]['max_age'])):
-          print("WARNING - Oldest snapshot on %s is %s old" % (args.repo, oldDiff))
-          exit(1)
+          errorMessage = ("Oldest snapshot on %s is %s old" % (args.repo, oldDiff))
         if newDiff > timedelta(days=int(repos[args.repo]['min_age'])):
-          print("WARNING - Newest snapshot on %s is %s old" % (args.repo, newDiff))
-          exit(1)
+          errorMessage = ("Newest snapshot on %s is %s old" % (args.repo, newDiff))
         else:
-          if not args.quiet: print("OK - Repository %s is healthy" % args.repo)
-          if args.verbose:
-            print("------------------------------------------------------------------------------")
-            print(result.stdout)
-            print("Newest snapshot age: %s" % newDiff)
-            print("Oldest snapshot age: %s" % oldDiff)
-          exit(0)
-    else:
-      if not args.quiet: print("OK - Repository %s is healthy" % args.repo)
-      if args.verbose:
-        print("------------------------------------------------------------------------------")
-        print(result.stdout)
-      exit(0)
+          result.stdout = result.stdout + "\n" + ("Newest snapshot age: %s" % newDiff) + "\n" + ("Oldest snapshot age: %s" % oldDiff)
+  # Return the results
+  end_script(
+    result.returncode,
+    result.stdout,
+    result.stderr,
+    ("Repository %s is healthy" % args.repo),
+    errorMessage),
+    commandEnv,
+    repos[args.repo]['location'],
+    args.quiet,
+    args.verbose
+  )
 
 elif args.action == 'list':
   # List snapshots in the repo

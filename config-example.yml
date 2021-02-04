@@ -1,0 +1,17 @@
+restic_binary_location: /opt/restic
+repos:
+  repo1:
+    location: /root/test
+    key: aaaa
+    min_age: 1
+    max_age: 7
+    includes:
+      - /tmp
+  repo2:
+    location: rest:https://rest-server.local:8000/server_backup
+    key: bbb
+    min_age: 3
+    max_age: 15
+    includes:
+      - /etc
+      - /usr/local/lib

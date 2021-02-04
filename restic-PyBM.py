@@ -65,7 +65,7 @@ def parse_config(configFile):
     # Attempt to read the config file contents
     try:
       stream = open(configFile, 'r')
-      dictionary = yaml.load(stream)
+      dictionary = yaml.load(stream, Loader=yaml.BaseLoader)
       for key, value in dictionary.items():
         if key == 'restic_binary_location':
           resticLocation = value

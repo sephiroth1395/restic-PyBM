@@ -197,8 +197,8 @@ elif args.action == 'check':
         newestTime = snaps[0]['snapshots'][len(snaps[0]['snapshots'])-1]['time']
 	      # Convert to Pythonic time structures
         timeFormat = '%Y-%m-%dT%H:%M:%S'
-        oldestTime = datetime.strptime(oldestTime[:-16], timeFormat)
-        newestTime = datetime.strptime(newestTime[:-16], timeFormat)
+        oldestTime = datetime.strptime(oldestTime[0:18], timeFormat)
+        newestTime = datetime.strptime(newestTime[0:18], timeFormat)
         # Compute snapshots ages versus the current time
         currentTime = datetime.now()
         oldDiff = currentTime - oldestTime

@@ -165,6 +165,7 @@ else:
 
 # If Vault is to be used, open the connection
 if args.vault:
+    import hvac
     vault = hvac.Client(url=vaultData['server'])
     vault.auth.approle.login(
       role_id=vaultData['role_id'],

@@ -178,8 +178,8 @@ for currentRepo in reposToProcess:
   # Either get the password from Vault or read it from the configuration file
   if args.vault:
     vaultRead = vault.secrets.kv.v2.read_secret_version(
-      path=vaultData['path'], 
-      mount_point=vaultData['mountpoint']
+      path=vaultData['key']['path'], 
+      mount_point=vaultData['key']['mountpoint']
     )
     commandEnv["RESTIC_PASSWORD"] = vaultData['data']['data']['password']
   else:

@@ -66,27 +66,27 @@ def create_args():
 
 def parse_config(configFile):
 
-    # Check if the config file exists
-    if os.path.exists(configFile):
-        # Attempt to read the config file contents
-        try:
-            stream = open(configFile, 'r')
-            configValues = yaml.load(stream, Loader=yaml.BaseLoader)
+  # Check if the config file exists
+  if os.path.exists(configFile):
+    # Attempt to read the config file contents
+    try:
+      stream = open(configFile, 'r')
+      configValues = yaml.load(stream, Loader=yaml.BaseLoader)
 
-            resticLocation = configValues['restic_binary_location']
-            repos = configValues['repos']
+      resticLocation = configValues['restic_binary_location']
+      repos = configValues['repos']
 
-            if configValues['vault']: vaultData = configValues['vault']
-            else: vaultData = ""
+      if 'vault' in configValues.keys(): vaultData = configValues['vault']
+      else: vaultData = ''
 
-            return [resticLocation, repos, vaultData]
-        except:
-            print("CRITICAL - Error reading the configuration file %s" %
-                  configFile)
-            exit(2)
-    else:
-        print("CRITICAL - Configuration file %s does not exist" % configFile)
-        exit(2)
+      return [resticLocation, repos, vaultData]
+    except:
+      print("CRITICAL - Error reading the configuration file %s" %
+            configFile)
+      exit(2)
+  else:
+    print("CRITICAL - Configuration file %s does not exist" % configFile)
+    exit(2)
 
 
 # ---- run a command and return its output

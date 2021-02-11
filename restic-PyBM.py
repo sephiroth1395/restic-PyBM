@@ -188,7 +188,7 @@ for currentRepo in reposToProcess:
   if args.action == 'create':
       # Create a new restic repo with the infos provided in backup.yml
       command = resticLocation + ' init --repo ' + repos[currentRepo]['location']
-      if duplicate in repos[currentRepo].keys():
+      if 'duplicate' in repos[currentRepo].keys():
         command += ' --repo2 ' + repos[currentRepo['duplicate']]['location'] + '--copy-chunker-params'
         print(command)
         exit(0)

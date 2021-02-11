@@ -71,17 +71,15 @@ def parse_config(configFile):
         # Attempt to read the config file contents
         try:
             stream = open(configFile, 'r')
-            dictionary = yaml.load(stream, Loader=yaml.BaseLoader)
-            for key, value in dictionary.items():
-                if key == 'restic_binary_location':
-                    resticLocation = value
-                elif key == 'repos':
-                    repos = value
-                else:
-                    print(
-                        "CRITICAL - Unexpected key in configuration file %s" % configFile)
-                    exit(2)
-            return [resticLocation, repos]
+            configValues = yaml.load(stream, Loader=yaml.BaseLoader)
+
+            resticLocation = configValues['restic_binary_location']
+            repos = configValues['repos']
+
+            if configValues['vault']: vaultData = configValues['vault']
+            else: vaultData = ""
+
+            return [resticLocation, repos, vaultData]
         except:
             print("CRITICAL - Error reading the configuration file %s" %
                   configFile)
@@ -93,43 +91,42 @@ def parse_config(configFile):
 
 # ---- run a command and return its output
 def run_command(command, commandEnv):
-    result = subprocess.run(command, env=commandEnv,
-                            shell=True, text=True, capture_output=True)
-    return result
+  result = subprocess.run(command, env=commandEnv,
+                          shell=True, text=True, capture_output=True)
+  return result
 
 
 # ---- generate the output and ensure the repo is unlocked --------------------
 def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, commandEnv, repoLocation, quiet, verbose):
-    # Ensure the repository is unlocked
-    command = resticLocation + ' unlock --repo ' + repoLocation
-    resultUnlock = run_command(command, commandEnv)
+  # Ensure the repository is unlocked
+  command = resticLocation + ' unlock --repo ' + repoLocation
+  resultUnlock = run_command(command, commandEnv)
 
-    # Process the output
-    if not returnCode == 0:
-        print("CRITICAL - %s" % errorMsg)
-        print("restic output: %s" % stdErr)
+  # Process the output
+  if not returnCode == 0:
+    print("CRITICAL - %s" % errorMsg)
+    print("restic output: %s" % stdErr)
+    print("unlock output:")
+    print(resultUnlock.stdout)
+    print(resultUnlock.stderr)
+    exit(2)
+  else:
+    if not resultUnlock.returncode == 0:
+      if not quiet:
+        print("WARNING - Could not unlock %s" % repoLocation)
+      if verbose:
+        print("restic output: %s" % stdOut)
         print("unlock output:")
         print(resultUnlock.stdout)
         print(resultUnlock.stderr)
-        exit(2)
+        exit(1)
     else:
-        if not resultUnlock.returncode == 0:
-            if not quiet:
-                print("WARNING - Could not unlock %s" % repoLocation)
-            if verbose:
-                print("restic output: %s" % stdOut)
-            print("unlock output:")
-            print(resultUnlock.stdout)
-            print(resultUnlock.stderr)
-            exit(1)
-        else:
-            if not quiet:
-                print("OK - %s" % successMsg)
-            if verbose:
-                print(
-                    "------------------------------------------------------------------------------")
-                print(stdOut)
-            exit(0)
+      if not quiet:
+        print("OK - %s" % successMsg)
+      if verbose:
+        print("------------------------------------------------------------------------------")
+        print(stdOut)
+      exit(0)
 
 
 # ---- mainline ---------------------------------------------------------------
@@ -137,12 +134,12 @@ def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, commandEnv, rep
 
 # Parse the arguments and read the configuration file
 args = create_args()
-(resticLocation, repos) = parse_config(args.configFile)
+(resticLocation, repos, vaultData) = parse_config(args.configFile)
 
 # Check if the provided repo exists in the configuration file
 if not args.repo in repos.keys():
-    print("Repository %s absent from %s" % (args.repo, args.configFile))
-    exit(2)
+  print("Repository %s absent from %s" % (args.repo, args.configFile))
+  exit(2)
 
 # Prepare an ephemeral environment dictionnary for the restic invocation
 commandEnv = os.environ.copy()

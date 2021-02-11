@@ -141,7 +141,7 @@ commandEnv["RESTIC_PASSWORD"] = repos[args.repo]['key']
 
 # If requested, self update restic first
 if args.selfUpdate:
-  command = resticLocation + 'self-update'
+  command = resticLocation + ' self-update'
   result = run_command(command, commandEnv)
   if not result.returncode == 0:
     print("CRITICAL - restic self-update failed: %s." % result.stderr)

@@ -5,7 +5,7 @@
 # Released under MIT license
 
 # v0.1 - 04/02/21 - Initial release
-# v0.2 - 
+# v0.2 - In progress - Minor fixes, restic auto-update
 
 # ---- imports ----------------------------------------------------------------
 
@@ -53,6 +53,9 @@ def create_args():
 
   parser.add_argument("-q", "--quiet", action = 'store_true',
     help = 'Output only error messages.')
+
+  parser.add_argument("-u", "--self-update", action = 'store_true',
+    dest = 'selfUpdate', help = 'Self-update restic before any other action.')
 
   args = parser.parse_args()
   return args
@@ -135,6 +138,14 @@ if not args.repo in repos.keys():
 # Prepare an ephemeral environment dictionnary for the restic invocation
 commandEnv = os.environ.copy()
 commandEnv["RESTIC_PASSWORD"] = repos[args.repo]['key']
+
+# If requested, self update restic first
+if args.selfUpdate:
+  command = resticLocation + 'self-update'
+  result = run_command(command, commandEnv)
+  if not result.returncode == 0:
+    print("CRITICAL - restic self-update failed: %s." % result.stderr)
+    exit(2)
 
 # Run the requested action
 if args.action == 'create':

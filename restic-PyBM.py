@@ -58,6 +58,9 @@ def create_args():
     parser.add_argument("-u", "--self-update", action='store_true',
                         dest='selfUpdate', help='Self-update restic before any other action.')
 
+    parser.add_argument("-V", "--use-vault", action='store_true',
+                        dest='vault', help='Get the repositories passwords from HashiCorp Vault.')
+
     args = parser.parse_args()
     return args
 
@@ -143,7 +146,6 @@ if not args.repo in repos.keys():
 
 # Prepare an ephemeral environment dictionnary for the restic invocation
 commandEnv = os.environ.copy()
-commandEnv["RESTIC_PASSWORD"] = repos[args.repo]['key']
 
 # If requested, self update restic first
 if args.selfUpdate:
@@ -161,8 +163,27 @@ if args.repo == 'ALL_REPOS':
 else:
     reposToProcess.append(args.repo)
 
+# If Vault is to be used, open the connection
+if args.vault:
+    vault = hvac.Client(url=vaultData['server'])
+    vault.auth.approle.login(
+      role_id=vaultData['role_id'],
+      secret_id=vaultData['secret_id'],
+    )
+
 # Run the requested action on all selected repositories
 for currentRepo in reposToProcess:
+
+  # Either get the password from Vault or read it from the configuration file
+  if args.vault:
+    vaultRead = vault.secrets.kv.v2.read_secret_version(
+      path=vaultData['path'], 
+      mount_point=vaultData['mountpoint']
+    )
+    commandEnv["RESTIC_PASSWORD"] = vaultData['data']['data']['password']
+  else:
+    commandEnv["RESTIC_PASSWORD"] = repos[currentRepo]['key']
+
   if args.action == 'create':
       # Create a new restic repo with the infos provided in backup.yml
       command = resticLocation + ' init --repo ' + repos[currentRepo]['location']

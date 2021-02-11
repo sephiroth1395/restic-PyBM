@@ -181,7 +181,7 @@ for currentRepo in reposToProcess:
       path=repos[currentRepo]['key']['path'], 
       mount_point=repos[currentRepo]['key']['mountpoint']
     )
-    commandEnv["RESTIC_PASSWORD"] = vaultData['data']['data']['password']
+    commandEnv["RESTIC_PASSWORD"] = vaultRead['data']['data']['password']
   else:
     commandEnv["RESTIC_PASSWORD"] = repos[currentRepo]['key']
 

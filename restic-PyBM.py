@@ -189,20 +189,20 @@ for currentRepo in reposToProcess:
   if args.vault: commandEnv["RESTIC_PASSWORD"] = get_repo_password(repos, currentRepo, vault)
   else: commandEnv["RESTIC_PASSWORD"] = get_repo_password(repos, currentRepo)
 
+  # If this a duplicate type repo, also get the source repository key
+  if 'duplicate' in repos[currentRepo].keys():
+    duplicateSource = repos[currentRepo]['duplicate']
+
+    if args.vault: commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource, vault)
+    else: commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource)
+
   if args.action == 'create':
       # Create a new restic repo with the infos provided in backup.yml
       command = resticLocation + ' init --repo ' + repos[currentRepo]['location']
-      # If this is a repo that will hold duplicates, get the source repository password
-      # and amend the restic command
+      # If this is a repo that will hold duplicates  amend the restic command
       if 'duplicate' in repos[currentRepo].keys():
-        duplicateSource = repos[currentRepo]['duplicate']
+        command += ' --repo2 ' + repos[duplicateSource]['location'] + ' --copy-chunker-params'
 
-        if args.vault: commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource, vault)
-        else: commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource)
-
-        command += ' --repo2 ' + repos[duplicateSource]['location'] + '--copy-chunker-params'
-        print(command)
-        exit(0)
       result = run_command(command, commandEnv)
       # Return the results
       end_script(
@@ -317,11 +317,15 @@ for currentRepo in reposToProcess:
       )
 
   else:
-      # Create a new snapshot
-      command = resticLocation + ' backup --exclude \'lost+found\' --repo ' + \
-          repos[currentRepo]['location']
-      for folder in repos[currentRepo]['includes']:
+      # If this is a duplicate type repo, we copy snapshots from the source to the destination
+      if 'duplicate' in repos[currentRepo].keys():
+        command = resticLocation + ' copy --repo ' + repos[currentRepo]['location'] + ' --repo2 ' repos[duplicateSource]['location']
+      # For a standard repo, create a new snapshot
+      else:
+        command = resticLocation + ' backup --exclude \'lost+found\' --repo ' + repos[currentRepo]['location']
+        for folder in repos[currentRepo]['includes']:
           command = command + ' ' + folder
+      
       result = run_command(command, commandEnv)
       # Return the results
       end_script(

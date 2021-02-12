@@ -98,6 +98,16 @@ def run_command(command, commandEnv):
                           shell=True, text=True, capture_output=True)
   return result
 
+# ---- obtain a repository password -------------------------------------------
+def get_repo_password(repos, currentRepo, vault = False):
+  if vault:
+    vaultRead = vault.secrets.kv.v2.read_secret_version(
+      path=repos[currentRepo]['key']['path'], 
+      mount_point=repos[currentRepo]['key']['mountpoint']
+    )
+    return(vaultRead['data']['data']['password'])
+  else:
+    return(repos[currentRepo]['key'])
 
 # ---- generate the output and ensure the repo is unlocked --------------------
 def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, commandEnv, repoLocation, quiet, verbose):
@@ -175,21 +185,21 @@ if args.vault:
 # Run the requested action on all selected repositories
 for currentRepo in reposToProcess:
 
-  # Either get the password from Vault or read it from the configuration file
-  if args.vault:
-    vaultRead = vault.secrets.kv.v2.read_secret_version(
-      path=repos[currentRepo]['key']['path'], 
-      mount_point=repos[currentRepo]['key']['mountpoint']
-    )
-    commandEnv["RESTIC_PASSWORD"] = vaultRead['data']['data']['password']
-  else:
-    commandEnv["RESTIC_PASSWORD"] = repos[currentRepo]['key']
+  # Get the repository password
+  if args.vault: commandEnv["RESTIC_PASSWORD"] = get_repo_password(repos, currentRepo, vault)
+  else: commandEnv["RESTIC_PASSWORD"] = get_repo_password(repos, currentRepo)
 
   if args.action == 'create':
       # Create a new restic repo with the infos provided in backup.yml
       command = resticLocation + ' init --repo ' + repos[currentRepo]['location']
+      # If this is a repo that will hold duplicates, get the source repository password
+      # and amend the restic command
       if 'duplicate' in repos[currentRepo].keys():
         duplicateSource = repos[currentRepo]['duplicate']
+
+        if args.vault: commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource, vault)
+        else: commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource)
+
         command += ' --repo2 ' + repos[duplicateSource]['location'] + '--copy-chunker-params'
         print(command)
         exit(0)

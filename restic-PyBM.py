@@ -319,7 +319,7 @@ for currentRepo in reposToProcess:
   else:
       # If this is a duplicate type repo, we copy snapshots from the source to the destination
       if 'duplicate' in repos[currentRepo].keys():
-        command = resticLocation + ' copy --repo ' + repos[currentRepo]['location'] + ' --repo2 ' repos[duplicateSource]['location']
+        command = resticLocation + ' copy --repo ' + repos[currentRepo]['location'] + ' --repo2 ' + repos[duplicateSource]['location']
       # For a standard repo, create a new snapshot
       else:
         command = resticLocation + ' backup --exclude \'lost+found\' --repo ' + repos[currentRepo]['location']

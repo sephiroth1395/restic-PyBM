@@ -193,8 +193,20 @@ for currentRepo in reposToProcess:
   if 'duplicate' in repos[currentRepo].keys():
     duplicateSource = repos[currentRepo]['duplicate']
 
-    if args.vault: commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource, vault)
-    else: commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource)
+    if args.vault:
+      commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource, vault)
+    else:
+      commandEnv["RESTIC_PASSWORD2"] = get_repo_password(repos, duplicateSource)
+
+    # When duplicating we need to invert the password variables 1 and 2
+    if args.action == 'run':
+      buffer = commandEnv["RESTIC_PASSWORD2"]
+      commandEnv["RESTIC_PASSWORD2"] = commandEnv["RESTIC_PASSWORD"]
+      commandEnv["RESTIC_PASSWORD"] = buffer
+
+
+  
+  # ---- actions execution ----------------------------------------------------
 
   if args.action == 'create':
       # Create a new restic repo with the infos provided in backup.yml
@@ -319,7 +331,7 @@ for currentRepo in reposToProcess:
   else:
       # If this is a duplicate type repo, we copy snapshots from the source to the destination
       if 'duplicate' in repos[currentRepo].keys():
-        command = resticLocation + ' copy --repo ' + repos[currentRepo]['location'] + ' --repo2 ' + repos[duplicateSource]['location']
+        command = resticLocation + ' copy --repo2 ' + repos[currentRepo]['location'] + ' --repo ' + repos[duplicateSource]['location']
       # For a standard repo, create a new snapshot
       else:
         command = resticLocation + ' backup --exclude \'lost+found\' --repo ' + repos[currentRepo]['location']

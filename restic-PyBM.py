@@ -221,7 +221,7 @@ for currentRepo in reposToProcess:
   if args.action == 'prune':
       # Clean up repo according to provided preservation policy
       command = resticLocation + ' forget --group-by host --keep-within ' + \
-          repos[currentRepo]['max_age'] + ' --prune --repo ' + \
+          repos[currentRepo]['max_age'] + 'd --prune --repo ' + \
           repos[currentRepo]['location']
       result = run_command(command, commandEnv)
       # Return the results

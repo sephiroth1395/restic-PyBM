@@ -332,13 +332,17 @@ for currentRepo in reposToProcess:
       # If this is a duplicate type repo, we copy snapshots from the source to the destination
       if 'duplicate' in repos[currentRepo].keys():
         command = resticLocation + ' copy --repo2 ' + repos[currentRepo]['location'] + ' --repo ' + repos[duplicateSource]['location']
+        result = run_command(command, commandEnv)
+        # Swap the repositories password to enable the unlock
+        commandEnv["RESTIC_PASSWORD"] = commandEnv["RESTIC_PASSWORD2"]
+
       # For a standard repo, create a new snapshot
       else:
         command = resticLocation + ' backup --exclude \'lost+found\' --repo ' + repos[currentRepo]['location']
         for folder in repos[currentRepo]['includes']:
           command = command + ' ' + folder
+        result = run_command(command, commandEnv)
       
-      result = run_command(command, commandEnv)
       # Return the results
       end_script(
           result.returncode,

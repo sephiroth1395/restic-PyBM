@@ -105,7 +105,7 @@ def get_repo_password(repos, currentRepo, vault = False):
       path=repos[currentRepo]['key']['path'], 
       mount_point=repos[currentRepo]['key']['mountpoint']
     )
-    return(vaultRead['data']['data'])
+    return(vaultRead['data']['data']['password'])
   else:
     return(repos[currentRepo]['key'])
 
@@ -192,7 +192,9 @@ for currentRepo in reposToProcess:
   if repos[currentRepo]['location'][0:3] == 'b2:':
     commandEnv["B2_ACCOUNT_ID"] = repoCredentials['keyID']
     commandEnv["B2_ACCOUNT_KEY"] = repoCredentials['applicationKey']
-  commandEnv["RESTIC_PASSWORD"] = repoCredentials['password']
+    commandEnv["RESTIC_PASSWORD"] = repoCredentials['password']
+  else:
+    commandEnv["RESTIC_PASSWORD"] = repoCredentials
 
   # If this a duplicate type repo, also get the source repository key
   if 'duplicate' in repos[currentRepo].keys():
@@ -200,7 +202,7 @@ for currentRepo in reposToProcess:
 
     if args.vault: repoCredentials2 = get_repo_password(repos, duplicateSource, vault)
     else: repoCredentials2 = get_repo_password(repos, duplicateSource)
-    commandEnv["RESTIC_PASSWORD2"] = repoCredentials2['password']
+    commandEnv["RESTIC_PASSWORD2"] = repoCredentials2
 
     # When duplicating we need to invert the password variables 1 and 2
     if args.action == 'run':

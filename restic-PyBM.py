@@ -352,7 +352,7 @@ for currentRepo in reposToProcess:
         for folder in repos[currentRepo]['includes']:
           command = command + ' ' + folder
         # Incorporate excludes if present
-        if repos[currentRepo]['excludes']:
+        if 'excludes' in repos[currentRepo].keys():
           for folder in repos[currentRepo]['excludes']:
             command = command + ' --exclude="' + folder + '"'
         result = run_command(command, commandEnv)        

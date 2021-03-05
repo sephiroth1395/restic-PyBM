@@ -105,7 +105,12 @@ def get_repo_password(repos, currentRepo, vault = False):
       path=repos[currentRepo]['key']['path'], 
       mount_point=repos[currentRepo]['key']['mountpoint']
     )
-    return(vaultRead['data']['data']['password'])
+    # If this is a B2 repo, we have different secrets to read from Vault
+    if repos[currentRepo]['location'][0:1] == 'b2':
+      return(vaultRead['data']['data'])
+    # Normal case
+    else:
+      return(vaultRead['data']['data']['password'])
   else:
     return(repos[currentRepo]['key'])
 
@@ -185,9 +190,15 @@ if args.vault:
 # Run the requested action on all selected repositories
 for currentRepo in reposToProcess:
 
-  # Get the repository password
-  if args.vault: commandEnv["RESTIC_PASSWORD"] = get_repo_password(repos, currentRepo, vault)
-  else: commandEnv["RESTIC_PASSWORD"] = get_repo_password(repos, currentRepo)
+  # Get the repository credentials
+  if args.vault: repoCredentials = get_repo_password(repos, currentRepo, vault)
+  else: repoCredentials = get_repo_password(repos, currentRepo)  
+  
+  if repos[currentRepo]['location'][0:1] == 'b2':
+    commandEnc["B2_ACCOUNT_ID"] = repoCredentials['keyID']
+    commandEnv["B2_ACCOUNT_KEY"] = repoCredentials['applicationKey']
+  else:
+    commandEnv["RESTIC_PASSWORD"] = repoCredentials
 
   # If this a duplicate type repo, also get the source repository key
   if 'duplicate' in repos[currentRepo].keys():

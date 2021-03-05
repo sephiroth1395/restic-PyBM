@@ -105,7 +105,10 @@ def get_repo_password(repos, currentRepo, vault = False):
       path=repos[currentRepo]['key']['path'], 
       mount_point=repos[currentRepo]['key']['mountpoint']
     )
-    return(vaultRead['data']['data']['password'])
+    if repos[currentRepo]['location'][0:3] == 'b2:':
+      return(vaultRead['data']['data'])
+    else:
+      return(vaultRead['data']['data']['password'])
   else:
     return(repos[currentRepo]['key'])
 
@@ -345,9 +348,14 @@ for currentRepo in reposToProcess:
       # For a standard repo, create a new snapshot
       else:
         command = resticLocation + ' backup --exclude \'lost+found\' --repo ' + repos[currentRepo]['location']
+        # Incorporate includes (mandatory)
         for folder in repos[currentRepo]['includes']:
           command = command + ' ' + folder
-        result = run_command(command, commandEnv)
+        # Incorporate excludes if present
+        if repos[currentRepo]['excludes']:
+          for folder in repos[currentRepo]['excludes']:
+            command = command + ' --exclude="' + folder + '"'
+        result = run_command(command, commandEnv)        
       
       # Return the results
       end_script(

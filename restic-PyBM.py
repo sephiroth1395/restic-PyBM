@@ -106,7 +106,7 @@ def get_repo_password(repos, currentRepo, vault = False):
       mount_point=repos[currentRepo]['key']['mountpoint']
     )
     # If this is a B2 repo, we have different secrets to read from Vault
-    if repos[currentRepo]['location'][0:1] == 'b2':
+    if repos[currentRepo]['location'][0:3] == 'b2:':
       return(vaultRead['data']['data'])
     # Normal case
     else:
@@ -194,8 +194,8 @@ for currentRepo in reposToProcess:
   if args.vault: repoCredentials = get_repo_password(repos, currentRepo, vault)
   else: repoCredentials = get_repo_password(repos, currentRepo)  
   
-  if repos[currentRepo]['location'][0:1] == 'b2':
-    commandEnc["B2_ACCOUNT_ID"] = repoCredentials['keyID']
+  if repos[currentRepo]['location'][0:3] == 'b2:':
+    commandEnv["B2_ACCOUNT_ID"] = repoCredentials['keyID']
     commandEnv["B2_ACCOUNT_KEY"] = repoCredentials['applicationKey']
   else:
     commandEnv["RESTIC_PASSWORD"] = repoCredentials

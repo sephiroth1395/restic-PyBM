@@ -332,7 +332,7 @@ for currentRepo in reposToProcess:
   stderrAccumulated += result.stderr
 
   # Ensure the repository is unlocked
-  command = resticLocation + ' unlock --repo ' + repoLocation
+  command = resticLocation + ' unlock --repo ' + repos[currentRepo]['location']
   resultUnlock = run_command(command, commandEnv)
   stdoutAccumulated += resultUnlock.stdout
   stderrAccumulated += resultUnlock.stderr

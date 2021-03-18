@@ -287,7 +287,7 @@ for currentRepo in reposToProcess:
                           ("Newest snapshot age: %s" % newDiff) + \
                           "\n" + ("Oldest snapshot age: %s" % oldDiff)
       # Return the results
-      successMessage = ("Repository %s is healthy" % currentRepo),
+      successMessage = ("Repository %s is healthy" % currentRepo)
       # errorMessage is already defined
 
   elif args.action == 'list':

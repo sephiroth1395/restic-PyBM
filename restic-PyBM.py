@@ -164,10 +164,10 @@ if args.selfUpdate:
 # Build a list with the repos to process
 reposToProcess = []
 if args.repo == 'ALL_REPOS':
-    for entry in repos:
-        reposToProcess.append(repos[entry])
+  for entry in repos:
+    reposToProcess.append(entry)
 else:
-    reposToProcess.append(args.repo)
+  reposToProcess.append(args.repo)
 
 # If Vault is to be used, open the connection
 if args.vault:

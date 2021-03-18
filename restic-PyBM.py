@@ -146,7 +146,7 @@ args = create_args()
 (resticLocation, repos, vaultData) = parse_config(args.configFile)
 
 # Check if the provided repo exists in the configuration file
-if not args.repo in repos.keys():
+if not args.repo in repos.keys() and not args.repo == 'ALL_REPOS':
   print("Repository %s absent from %s" % (args.repo, args.configFile))
   exit(2)
 

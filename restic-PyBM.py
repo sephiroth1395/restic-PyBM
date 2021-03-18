@@ -113,29 +113,22 @@ def get_repo_password(repos, currentRepo, vault = False):
     return(repos[currentRepo]['key'])
 
 # ---- generate the output and ensure the repo is unlocked --------------------
-def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, commandEnv, repoLocation, quiet, verbose):
-  # Ensure the repository is unlocked
-  command = resticLocation + ' unlock --repo ' + repoLocation
-  resultUnlock = run_command(command, commandEnv)
+def end_script(returnCode, stdOut, stdErr, successMsg, errorMsg, quiet, verbose):
 
   # Process the output
-  if not returnCode == 0:
+  if returnCode == 2:
     print("CRITICAL - %s" % errorMsg)
-    print("restic output: %s" % stdErr)
-    print("unlock output:")
-    print(resultUnlock.stdout)
-    print(resultUnlock.stderr)
+    print("Output: %s" % stdOut)
+    print("Error: %s" % stdErr)
     exit(2)
   else:
-    if not resultUnlock.returncode == 0:
+    if returnCode == 1:
       if not quiet:
-        print("WARNING - Could not unlock %s" % repoLocation)
+        print("WARNING - %s" % errorMsg)
       if verbose:
-        print("restic output: %s" % stdOut)
-        print("unlock output:")
-        print(resultUnlock.stdout)
-        print(resultUnlock.stderr)
-        exit(1)
+        print("Output: %s" % stdOut)
+        print("Error: %s" % stdErr)
+      exit(1)
     else:
       if not quiet:
         print("OK - %s" % successMsg)
@@ -184,6 +177,9 @@ if args.vault:
       role_id=vaultData['role_id'],
       secret_id=vaultData['secret_id'],
     )
+
+# We initialize the script return value to zero.  If any operation returns something else, we will adapt accordingly.
+scriptReturnValue = 0
 
 # Run the requested action on all selected repositories
 for currentRepo in reposToProcess:
@@ -323,15 +319,29 @@ for currentRepo in reposToProcess:
       successMessage = ("Snapshot successfully created on repository %s" % currentRepo)
       errorMessage = ("Error creating new snapshot on repository %s" % repos[currentRepo]['location'])
 
+  # At the end of each loop round, we accumulate the outputs to prepare the final script output
+  if not result.returncode == 0:
+    scriptReturnValue = 2
+  successMessageAccumulated += successMessage + ". "
+  errorMessageAccumulated += errorMessage + ". "
+  stdoutAccumulated += result.stdout
+  stderrAccumulated += result.stderr
+
+  # Ensure the repository is unlocked
+  command = resticLocation + ' unlock --repo ' + repoLocation
+  resultUnlock = run_command(command, commandEnv)
+  stdoutAccumulated += resultUnlock.stdout
+  stderrAccumulated += resultUnlock.stderr
+  if scriptReturnValue < 2 and not resultUnlock.returncode == 0:
+    scriptReturnValue = 1
+
 # Provide the user output
 end_script(
-  result.returncode,
-  result.stdout,
-  result.stderr,
-  successMessage,
-  errorMessage,
-  commandEnv,
-  repos[currentRepo]['location'],
+  scriptReturnValue,
+  stdoutAccumulated,
+  stderrAccumulated,
+  successMessageAccumulated,
+  errorMessageAccumulated,
   args.quiet,
   args.verbose
 )

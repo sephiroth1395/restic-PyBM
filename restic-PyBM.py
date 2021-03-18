@@ -178,7 +178,11 @@ if args.vault:
       secret_id=vaultData['secret_id'],
     )
 
-# We initialize the script return value to zero.  If any operation returns something else, we will adapt accordingly.
+# Initialize accumulation variables used to create the script output messages
+successMessageAccumulated = ''
+errorMessageAccumulated = ''
+stdoutAccumulated = ''
+stderrAccumulated = ''
 scriptReturnValue = 0
 
 # Run the requested action on all selected repositories

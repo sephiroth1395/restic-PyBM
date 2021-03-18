@@ -226,18 +226,8 @@ for currentRepo in reposToProcess:
 
       result = run_command(command, commandEnv)
       # Return the results
-      end_script(
-          result.returncode,
-          result.stdout,
-          result.stderr,
-          ("Repository %s successfully created at location %s" %
-          (currentRepo, repos[currentRepo]['location'])),
-          ("Error creating repository %s" % repos[currentRepo]['location']),
-          commandEnv,
-          repos[currentRepo]['location'],
-          args.quiet,
-          args.verbose
-      )
+      successMessage = ("Repository %s successfully created at location %s" % (currentRepo, repos[currentRepo]['location']))
+      errorMessage = ("Error creating repository %s" % repos[currentRepo]['location'])
 
   if args.action == 'prune':
       # Clean up repo according to provided preservation policy
@@ -246,17 +236,8 @@ for currentRepo in reposToProcess:
           repos[currentRepo]['location']
       result = run_command(command, commandEnv)
       # Return the results
-      end_script(
-          result.returncode,
-          result.stdout,
-          result.stderr,
-          ("Repository %s clean up successful" % currentRepo),
-          ("Error cleaning up repository %s" % currentRepo),
-          commandEnv,
-          repos[currentRepo]['location'],
-          args.quiet,
-          args.verbose
-      )
+      successMessage = ("Repository %s clean up successful" % currentRepo)
+      errorMessage = ("Error cleaning up repository %s" % currentRepo)
 
   elif args.action == 'check':
       # Check the repository integrity
@@ -306,17 +287,8 @@ for currentRepo in reposToProcess:
                           ("Newest snapshot age: %s" % newDiff) + \
                           "\n" + ("Oldest snapshot age: %s" % oldDiff)
       # Return the results
-      end_script(
-          result.returncode,
-          result.stdout,
-          result.stderr,
-          ("Repository %s is healthy" % currentRepo),
-          errorMessage,
-          commandEnv,
-          repos[currentRepo]['location'],
-          args.quiet,
-          args.verbose
-      )
+      successMessage = ("Repository %s is healthy" % currentRepo),
+      # errorMessage is already defined
 
   elif args.action == 'list':
       # List snapshots in the repo
@@ -324,18 +296,8 @@ for currentRepo in reposToProcess:
           repos[currentRepo]['location']
       result = run_command(command, commandEnv)
       # Return the results
-      end_script(
-          result.returncode,
-          result.stdout,
-          result.stderr,
-          ("Snapshot list retreived for repository %s" % currentRepo),
-          ("Error listing snapshots on repository %s" %
-          repos[currentRepo]['location']),
-          commandEnv,
-          repos[currentRepo]['location'],
-          args.quiet,
-          args.verbose
-      )
+      successMessage = ("Snapshot list retreived for repository %s" % currentRepo)
+      errorMessage = ("Error listing snapshots on repository %s" % repos[currentRepo]['location'])
 
   else:
       # If this is a duplicate type repo, we copy snapshots from the source to the destination
@@ -358,15 +320,18 @@ for currentRepo in reposToProcess:
         result = run_command(command, commandEnv)        
       
       # Return the results
-      end_script(
-          result.returncode,
-          result.stdout,
-          result.stderr,
-          ("Snapshot successfully created on repository %s" % currentRepo),
-          ("Error creating new snapshot on repository %s" %
-          repos[currentRepo]['location']),
-          commandEnv,
-          repos[currentRepo]['location'],
-          args.quiet,
-          args.verbose
-      )
+      successMessage = ("Snapshot successfully created on repository %s" % currentRepo)
+      errorMessage = ("Error creating new snapshot on repository %s" % repos[currentRepo]['location'])
+
+# Provide the user output
+end_script(
+  result.returncode,
+  result.stdout,
+  result.stderr,
+  successMessage,
+  errorMessage,
+  commandEnv,
+  repos[currentRepo]['location'],
+  args.quiet,
+  args.verbose
+)

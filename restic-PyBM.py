@@ -105,7 +105,8 @@ def get_repo_password(repos, currentRepo, vault = False):
       path=repos[currentRepo]['key']['path'], 
       mount_point=repos[currentRepo]['key']['mountpoint']
     )
-    if repos[currentRepo]['location'][0:3] == 'b2:':
+    complexMethods = ['s3:', 'b2:'];
+    if repos[currentRepo]['location'][0:3] in complexMethods:
       return(vaultRead['data']['data'])
     else:
       return(vaultRead['data']['data']['password'])

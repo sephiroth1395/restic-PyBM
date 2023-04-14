@@ -196,6 +196,10 @@ for currentRepo in reposToProcess:
     commandEnv["B2_ACCOUNT_ID"] = repoCredentials['keyID']
     commandEnv["B2_ACCOUNT_KEY"] = repoCredentials['applicationKey']
     commandEnv["RESTIC_PASSWORD"] = repoCredentials['password']
+  elif repos[currentRepo]['location'][0:3] == 's3:':
+    commandEnv["AWS_ACCESS_KEY_ID"] = repoCredentials['keyID']
+    commandEnv["AWS_SECRET_ACCESS_KEY"] = repoCredentials['applicationKey']
+    commandEnv["RESTIC_PASSWORD"] = repoCredentials['password']
   else:
     commandEnv["RESTIC_PASSWORD"] = repoCredentials
 

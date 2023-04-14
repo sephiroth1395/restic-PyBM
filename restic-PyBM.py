@@ -100,12 +100,12 @@ def run_command(command, commandEnv):
 
 # ---- obtain a repository password -------------------------------------------
 def get_repo_password(repos, currentRepo, vault = False):
+  complexMethods = ['s3:', 'b2:'];
   if vault:
     vaultRead = vault.secrets.kv.v2.read_secret_version(
       path=repos[currentRepo]['key']['path'], 
       mount_point=repos[currentRepo]['key']['mountpoint']
     )
-    complexMethods = ['s3:', 'b2:'];
     if repos[currentRepo]['location'][0:3] in complexMethods:
       return(vaultRead['data']['data'])
     else:

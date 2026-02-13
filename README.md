@@ -1,5 +1,7 @@
 # restic-PyBM
 
+*MIGRATED TO https://codeberg.org/ev1z/restic-PyBM*
+
 A Python 3 wrapper to manage `restic` repositories and monitor them with Nagios-compliant outputs.
 
 - [restic-PyBM](#restic-pybm)
